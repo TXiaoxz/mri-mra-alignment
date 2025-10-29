@@ -206,7 +206,7 @@ async def get_slice_image(session_id: str, slice_index: int):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from io import BytesIO
-    from alignment import normalize_intensity, normalize_uint8
+    from alignment import load_nifti, normalize_intensity, normalize_uint8
 
     session_upload_dir = UPLOAD_DIR / session_id
     session_output_dir = OUTPUT_DIR / session_id
@@ -223,12 +223,10 @@ async def get_slice_image(session_id: str, slice_index: int):
 
     mra_path = str(mra_files[0])
 
-    # Load data
-    mri_img = nib.load(str(aligned_mri_path))
-    mra_img = nib.load(mra_path)
-
-    mri_data = mri_img.get_fdata()
-    mra_data = mra_img.get_fdata()
+    # Load data with RAS orientation for consistency
+    # Using load_nifti() ensures both images are in the same coordinate system
+    mri_data, mri_img = load_nifti(str(aligned_mri_path))
+    mra_data, mra_img = load_nifti(mra_path)
 
     # Normalize
     mri_norm = normalize_intensity(mri_data.astype(np.float32))
@@ -283,7 +281,7 @@ async def pregenerate_slices(session_id: str, step: int = 1):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    from alignment import normalize_intensity
+    from alignment import load_nifti, normalize_intensity
 
     session_upload_dir = UPLOAD_DIR / session_id
     session_output_dir = OUTPUT_DIR / session_id
@@ -302,11 +300,12 @@ async def pregenerate_slices(session_id: str, step: int = 1):
     if not aligned_mri_path.exists() or not mra_files:
         raise HTTPException(status_code=404, detail="Aligned images not found")
 
-    mri_img = nib.load(str(aligned_mri_path))
-    mra_img = nib.load(str(mra_files[0]))
+    mra_path = str(mra_files[0])
 
-    mri_data = mri_img.get_fdata()
-    mra_data = mra_img.get_fdata()
+    # Load data with RAS orientation for consistency
+    # Using load_nifti() ensures both images are in the same coordinate system
+    mri_data, mri_img = load_nifti(str(aligned_mri_path))
+    mra_data, mra_img = load_nifti(mra_path)
 
     mri_norm = normalize_intensity(mri_data.astype(np.float32))
     mra_norm = normalize_intensity(mra_data.astype(np.float32))
@@ -485,7 +484,7 @@ async def debug_orientations(session_id: str, slice_index: int):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from io import BytesIO
-    from alignment import normalize_intensity
+    from alignment import load_nifti, normalize_intensity
 
     session_upload_dir = UPLOAD_DIR / session_id
     session_output_dir = OUTPUT_DIR / session_id
@@ -502,12 +501,10 @@ async def debug_orientations(session_id: str, slice_index: int):
 
     mra_path = str(mra_files[0])
 
-    # Load data
-    mri_img = nib.load(str(aligned_mri_path))
-    mra_img = nib.load(mra_path)
-
-    mri_data = mri_img.get_fdata()
-    mra_data = mra_img.get_fdata()
+    # Load data with RAS orientation for consistency
+    # Using load_nifti() ensures both images are in the same coordinate system
+    mri_data, mri_img = load_nifti(str(aligned_mri_path))
+    mra_data, mra_img = load_nifti(mra_path)
 
     # Normalize
     mri_norm = normalize_intensity(mri_data.astype(np.float32))
